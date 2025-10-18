@@ -2,7 +2,7 @@ import os, shutil, glob
 from nnunetv2.dataset_conversion.generate_dataset_json import generate_dataset_json
 from nnunetv2.utilities.dataset_name_id_conversion import convert_dataset_name_to_id
 import torch
-import datetime
+from datetime import datetime
 
 def fMakeDir(dirpath):
     os.makedirs(dirpath, exist_ok=True)
@@ -26,10 +26,11 @@ def fInitialize(rootdir, modelname):
     fMakeDir(target_labelsTs)
     fMakeDir(target_imagesTs)
     fMakeDir(target_labelsTr)
-        
-    print(os.environ['nnUNet_raw'])
-    print(os.environ['nnUNet_preprocessed'])
-    print(os.environ['nnUNet_results'])
+
+    print('\nENVIRONMENT VARIABLES')        
+    print(f"nnUNet_raw:{os.environ['nnUNet_raw']}")
+    print(f"nnUNet_preprocessed:{os.environ['nnUNet_preprocessed']}")
+    print(f"nnUNet_results:{os.environ['nnUNet_results']}")
 
     
     return {"target_base": target_base, "target_imagesTr":target_imagesTr,"target_imagesTs":target_imagesTs,
@@ -119,18 +120,7 @@ def fPrepareFilesMP(dirdic, channel_names, labels,
     return
 
 def fPreProcess(modelname):
-        """
-        nnUNetv2_plan_and_preprocess -d DATASET_ID --verify_dataset_integrity
-        DATASET_ID given as number
-        
-        If you prefer to keep things separate, you can also use 
-        nnUNetv2_extract_fingerprint
-        nnUNetv2_plan_experiment
-        nnUNetv2_preprocess
-        """
-        print(os.environ['nnUNet_raw'])
-        print(os.environ['nnUNet_preprocessed'])
-        print(os.environ['nnUNet_results'])
+    
         taskno = convert_dataset_name_to_id(modelname)
         execstr = f'nnUNetv2_plan_and_preprocess -d {taskno} --verify_dataset_integrity'
         print(f'Executing command line: {execstr}')
@@ -161,12 +151,12 @@ def fTrain(modelname, configurations, folds=[0,1,2,3,4], gpuid=0):
     for config in configurations:
         for fold in folds:        
             execstr = f'nnUNetv2_train {modelname} {config} {fold} -tr nnUNetTrainer --npz' 
-            print(f'Executing {execstr}')
+            print(f'Executing command line: {execstr}')
             os.system(execstr)
     return
 
 
-def fPredict(rootdir, modelname, filestopredict, segfilename, configuration, folds='1'):
+def fPredict(rootdir, modelname, filestopredict, segfilename, configuration, folds):
   
         # make dummy folders
         runname = f'{modelname}-{datetime.now().strftime("%Y%m%d%H%M%S%f")}'
@@ -190,7 +180,7 @@ def fPredict(rootdir, modelname, filestopredict, segfilename, configuration, fol
     
         # Execute prediction
         print(exestr)
-        os.system(exestr)
+        os.system(f'Executing command: {exestr}')
         
         smsegfilename = None
         
