@@ -8,6 +8,17 @@ def fMakeDir(dirpath):
     os.makedirs(dirpath, exist_ok=True)
     return
 
+def fNepochstoTrainername(nepochs):
+    if nepochs == 1000:
+        return 'nnUNetTrainer'
+    nepochchoices = [1,10,20,50,100, 250, 500, 750, 2000, 4000, 8000]
+    trainernames = [f'nnUNetTrainer_{t}epochs' for t in nepochchoices]
+    if not(nepochs in nepochchoices):
+        print(f"Training aborted: {nepochs} not one of {nepochchoices}")
+        return ""
+    print(f'**** Using Trainer {nepochchoices.index(nepochs)} ****')
+    return trainernames[nepochchoices.index(nepochs)]
+    
 def fInitialize(rootdir, modelname):
 
     nnUNet_raw_data = os.environ['nnUNet_raw'] = os.path.join(rootdir, 'nnUNetv2_raw')
@@ -31,7 +42,6 @@ def fInitialize(rootdir, modelname):
     print(f"nnUNet_raw:{os.environ['nnUNet_raw']}")
     print(f"nnUNet_preprocessed:{os.environ['nnUNet_preprocessed']}")
     print(f"nnUNet_results:{os.environ['nnUNet_results']}")
-
     
     return {"target_base": target_base, "target_imagesTr":target_imagesTr,"target_imagesTs":target_imagesTs,
             "target_labelsTr":target_labelsTr,
@@ -128,13 +138,14 @@ def fPreProcess(modelname):
         return
     
     
-def fTrain(modelname, configurations, folds=[0,1,2,3,4], gpuid=0):
+def fTrain(modelname, configurations, folds=[0,1,2,3,4], gpuid=0, nepochs=10):
 
     """
     gpuid - id of GPU to run training on, only use if multiple GPU's and want to train on a sepecific one
 
     """  
     taskno = convert_dataset_name_to_id(modelname)
+    trainername = fNepochstoTrainername(nepochs)
     
     # get cuda visible devices
     ngpus = torch.cuda.device_count()
@@ -150,14 +161,16 @@ def fTrain(modelname, configurations, folds=[0,1,2,3,4], gpuid=0):
         
     for config in configurations:
         for fold in folds:        
-            execstr = f'nnUNetv2_train {modelname} {config} {fold} -tr nnUNetTrainer --npz' 
+            execstr = f'nnUNetv2_train {modelname} {config} {fold} -tr {trainername}' 
             print(f'Executing command line: {execstr}')
             os.system(execstr)
     return
 
 
-def fPredict(rootdir, modelname, filestopredict, segfilename, configuration, folds):
+def fPredict(rootdir, modelname, filestopredict, segfilename, configuration, folds, nepochs=10):
   
+        trainername = fNepochstoTrainername(nepochs)
+        
         # make dummy folders
         runname = f'{modelname}-{datetime.now().strftime("%Y%m%d%H%M%S%f")}'
         casefolder = os.path.join(rootdir, 'temp', f'{modelname}_predict-in_{runname}')
@@ -176,11 +189,11 @@ def fPredict(rootdir, modelname, filestopredict, segfilename, configuration, fol
             shutil.copyfile(filetopredict, predfile)
             predfilelist = predfilelist + [predfile]
 
-        exestr = f'nnUNetv2_predict -i {casefolder} -o {predfolder} -d {modelname} -c {configuration} -tr nnUNetTrainer -f {folds} -p nnUNetPlans'
-    
+        exestr = f'nnUNetv2_predict -i {casefolder} -o {predfolder} -d {modelname} -c {configuration} -tr {trainername} -f {folds} -p nnUNetPlans'
+       
         # Execute prediction
-        print(exestr)
-        os.system(f'Executing command: {exestr}')
+        print(f'\nExcuting command: {exestr}\n')
+        os.system(exestr)
         
         smsegfilename = None
         

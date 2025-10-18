@@ -15,7 +15,7 @@ https://pi-cai.grand-challenge.org/
 ### Index
 - nnunet.ipynb - sample notebook  
 - utils
-  - nnunetutils.py - utilities for executing nnU-Net command lines  
+  - nnunetutils.py - utilities for constructing and executing nnU-Net command lines  
 - MLDATADIR - working directory for MLDATA
   - NNUNETTUTORIAL
     - PICAI - toy data which can be copied to you 
